@@ -36,7 +36,7 @@
         }
         
         .rank-1-highlight {
-            border-left: 6px solid #fcd34d; 
+            border-left: 6px solid #fcd34d;
             box-shadow: 0 10px 15px -3px rgba(252, 211, 77, 0.5), 0 4px 6px -4px rgba(252, 211, 77, 0.5);
             transform: scale(1.02);
             transition: all 0.3s ease;
@@ -53,8 +53,8 @@
 
     <div class="max-w-4xl mx-auto">
         <header class="text-center mb-10">
-            <h1 class="text-5xl font-extrabold mb-2 neon-text">Ranking Medialnych</h1>
-            <p class="text-gray-600">NR. 1 W PL Sprawdziany i Kartkówki NIZE</p>
+            <h1 class="text-5xl font-extrabold mb-2 neon-text">Publiczny Ranking Medialnych</h1>
+            <p class="text-gray-600">Dynamiczny wykres ocen bazujący na wszystkich oddanych głosach.</p>
         </header>
 
         <div id="ranking-view">
@@ -82,13 +82,18 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAAeQbCXt15Zjuf_sA1p0jRp_tSb8WSaNs",
+            authDomain: "ocena-medialnych.firebaseapp.com",
+            projectId: "ocena-medialnych",
+            storageBucket: "ocena-medialnych.firebasestorage.app",
+            messagingSenderId: "570287989991",
+            appId: "1:570287989991:web:4c0594ab280515802dee42",
+            measurementId: "G-3RQ6NCS31Q"
+        };
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        const firebaseConfig = typeof __firebase_config !== 'undefined' && Object.keys(JSON.parse(__firebase_config)).length > 0
-            ? JSON.parse(__firebase_config)
-            : {};
-        
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
         let db;
@@ -98,7 +103,7 @@
         const rankingList = document.getElementById('ranking-list');
         const rankingLoading = document.getElementById('ranking-loading');
 
-        if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey !== "") {
+        if (firebaseConfig.apiKey !== "") {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             const auth = getAuth(app);
@@ -155,7 +160,7 @@
             const { discordNick, tiktokLink } = personality;
             const { averageRating, roundedAverage, ratingCount } = stats;
             
-            if (ratingCount === 0) return null; 
+            if (ratingCount === 0) return null;
 
             const starsHTML = '★'.repeat(roundedAverage) + '☆'.repeat(5 - roundedAverage);
 
@@ -239,7 +244,8 @@
                 const ratingPromises = personalitiesData.map(personality => {
                     return new Promise((resolve) => {
                         const ratingsRef = query(getRatingsCollectionRef(personality.id));
-                        onSnapshot(ratingsRef, (ratingsSnapshot) => {
+                        
+                        const unsubscribe = onSnapshot(ratingsRef, (ratingsSnapshot) => {
                             const ratings = [];
                             ratingsSnapshot.forEach(ratingDoc => {
                                 ratings.push({ id: ratingDoc.id, rating: ratingDoc.data().rating });
@@ -247,10 +253,11 @@
                             
                             const stats = calculateRatingStats(ratings);
                             resolve({ personality, stats });
-                            
+                            unsubscribe(); 
                         }, (error) => {
                             console.error("Błąd ładowania ocen dla", personality.discordNick, ":", error);
                             resolve({ personality, stats: calculateRatingStats([]) });
+                            unsubscribe();
                         });
                     });
                 });
