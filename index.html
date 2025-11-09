@@ -11,6 +11,7 @@
         :root {
             --neon-purple: #9c27b0;
             --neon-glow: 0 0 8px rgba(156, 39, 176, 0.9), 0 0 15px rgba(156, 39, 176, 0.6);
+            --bar-color: #ab47bc; 
         }
 
         body {
@@ -46,6 +47,27 @@
             font-size: 2rem;
             line-height: 1;
         }
+
+        .bar-container {
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .bar {
+            height: 100%;
+            background-color: var(--bar-color);
+            transition: width 1s ease-out;
+            box-shadow: 0 0 5px rgba(171, 71, 188, 0.7);
+        }
+        
+        .ranking-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
         
     </style>
 </head>
@@ -54,26 +76,24 @@
     <div class="max-w-4xl mx-auto">
         <header class="text-center mb-10">
             <h1 class="text-5xl font-extrabold mb-2 neon-text">Publiczny Ranking Medialnych</h1>
-            <p class="text-gray-600">Dynamiczny wykres ocen bazujący na wszystkich oddanych głosach.</p>
+            <p class="text-gray-600">NR. 1 W PL Sprawdziany i Kartkówki NIZE</p>
         </header>
 
         <div id="ranking-view">
             <div class="card p-6 rounded-lg neon-border">
                 <h2 class="text-2xl font-semibold mb-6 border-b border-gray-200 pb-2 text-gray-800 neon-text">
-                    Aktualna Klasyfikacja
+                    Klasyfikacja i Wykres Ocen
                 </h2>
-                <p class="text-gray-600 mb-6">Osoby są sortowane według średniej oceny (gwiazdki). W przypadku remisu, wyżej jest osoba z większą liczbą głosów.</p>
+                <p class="text-gray-600 mb-6">Osoby są sortowane według średniej oceny (gwiazdki). Wykres prezentuje średnią ocenę w skali 0-5.</p>
                 
-                <div id="ranking-list" class="space-y-4">
+                <div id="ranking-list" class="space-y-6">
                 </div>
                 <p id="ranking-loading" class="text-center py-8 text-gray-500">
                     Ładowanie rankingu...
                 </p>
-            </div>
-            
-             <div class="mt-8 p-4 bg-white border border-gray-300 border-l-4 rounded-md shadow-sm" style="border-left-color: #3b82f6;">
-                <p class="font-bold text-gray-700">Informacja o połączeniu:</p>
-                <p id="connection-status" class="font-mono text-sm break-all text-gray-500">Uwierzytelnianie...</p>
+                <p id="no-data" class="text-center py-8 text-gray-500 hidden">
+                    Brak dodanych osób z aktywnymi ocenami.
+                </p>
             </div>
         </div>
     </div>
@@ -99,9 +119,9 @@
         let db;
         let isAuthReady = false;
         
-        const statusDisplay = document.getElementById('connection-status');
         const rankingList = document.getElementById('ranking-list');
         const rankingLoading = document.getElementById('ranking-loading');
+        const noData = document.getElementById('no-data');
 
         if (firebaseConfig.apiKey !== "") {
             const app = initializeApp(firebaseConfig);
@@ -123,18 +143,15 @@
             onAuthStateChanged(auth, (user) => {
                 isAuthReady = true;
                 if (user) {
-                    statusDisplay.textContent = 'Połączono i gotowe do pobierania danych.';
                     loadRankingData();
                 } else {
-                    statusDisplay.textContent = 'BŁĄD: Nie można się uwierzytelnić. Sprawdź reguły Firebase.';
-                    rankingLoading.textContent = 'Błąd autentykacji.';
+                    rankingLoading.textContent = 'Błąd autentykacji. Brak dostępu do danych.';
                 }
             });
 
             authenticate();
         } else {
-            statusDisplay.textContent = 'BŁĄD: Brak konfiguracji Firebase. Aplikacja nie działa.';
-            rankingLoading.textContent = 'BŁĄD: Brak konfiguracji Firebase.';
+            rankingLoading.textContent = 'BŁĄD: Brak konfiguracji Firebase. Aplikacja nie działa.';
         }
         
         const getPersonalitiesCollectionRef = () => {
@@ -163,30 +180,38 @@
             if (ratingCount === 0) return null;
 
             const starsHTML = '★'.repeat(roundedAverage) + '☆'.repeat(5 - roundedAverage);
+            const barWidth = (averageRating / 5) * 100;
 
             const isWinner = rank === 1;
             const rankTextClass = isWinner ? 'text-4xl text-yellow-600 font-extrabold' : 'text-3xl text-gray-800 font-bold';
-            const itemClass = `flex items-center p-4 bg-white rounded-lg shadow-lg border border-gray-100 transition duration-300 ${isWinner ? 'rank-1-highlight' : 'hover:shadow-md'}`;
+            const itemClass = `ranking-item p-4 bg-white rounded-lg border border-gray-100 transition duration-300 ${isWinner ? 'rank-1-highlight' : 'hover:shadow-md'}`;
             
             const item = document.createElement('div');
             item.className = itemClass;
             
             item.innerHTML = `
-                <div class="w-12 flex-shrink-0 text-center mr-4">
-                    <span class="${rankTextClass}">${rank}.</span>
+                <div class="flex items-center">
+                    <div class="w-12 flex-shrink-0 text-center mr-4">
+                        <span class="${rankTextClass}">${rank}.</span>
+                    </div>
+                    
+                    <div class="flex-grow min-w-0">
+                        <h4 class="text-xl font-bold text-gray-800 truncate">${discordNick}</h4>
+                        <a href="${tiktokLink}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 transition truncate block">${tiktokLink}</a>
+                    </div>
+                    
+                    <div class="flex-shrink-0 ml-4 text-right">
+                        <div class="star-display text-amber-500 font-bold">${starsHTML}</div>
+                        <p class="text-sm text-gray-600 font-medium mt-1">
+                            ${averageRating.toFixed(2)}/5 
+                            <span class="text-xs text-gray-500">(${ratingCount} ocen)</span>
+                        </p>
+                    </div>
                 </div>
-                
-                <div class="flex-grow min-w-0">
-                    <h4 class="text-xl font-bold text-gray-800 truncate">${discordNick}</h4>
-                    <a href="${tiktokLink}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 transition truncate block">${tiktokLink}</a>
-                </div>
-                
-                <div class="flex-shrink-0 ml-4 text-right">
-                    <div class="star-display text-amber-500 font-bold">${starsHTML}</div>
-                    <p class="text-sm text-gray-600 font-medium mt-1">
-                        ${averageRating.toFixed(2)}/5 
-                        <span class="text-xs text-gray-500">(${ratingCount} ocen)</span>
-                    </p>
+                <div class="w-full">
+                    <div class="bar-container">
+                        <div class="bar" style="width: ${barWidth}%;"></div>
+                    </div>
                 </div>
             `;
             
@@ -194,7 +219,7 @@
         };
         
         const renderRanking = (personalitiesWithStats) => {
-             rankingList.innerHTML = '';
+            rankingList.innerHTML = '';
             
             const sortedRanking = personalitiesWithStats
                 .filter(p => p.stats.ratingCount > 0) 
@@ -206,8 +231,10 @@
                 });
             
             if (sortedRanking.length === 0) {
-                 rankingList.innerHTML = '<p class="text-center py-8 text-gray-500">Brak osób z aktywnymi ocenami w bazie danych.</p>';
+                 noData.classList.remove('hidden');
                  return;
+            } else {
+                 noData.classList.add('hidden');
             }
             
             sortedRanking.forEach((item, index) => {
@@ -225,6 +252,7 @@
             }
 
             rankingLoading.classList.remove('hidden');
+            noData.classList.add('hidden');
             rankingList.innerHTML = '';
             
             const personalitiesRef = query(getPersonalitiesCollectionRef());
@@ -237,38 +265,42 @@
 
                 if (personalitiesData.length === 0) {
                     rankingLoading.classList.add('hidden');
-                    rankingList.innerHTML = '<p class="text-center py-8 text-gray-500">Brak dodanych osób do oceniania.</p>';
+                    noData.classList.remove('hidden');
                     return;
                 }
                 
-                const ratingPromises = personalitiesData.map(personality => {
-                    return new Promise((resolve) => {
-                        const ratingsRef = query(getRatingsCollectionRef(personality.id));
-                        
-                        const unsubscribe = onSnapshot(ratingsRef, (ratingsSnapshot) => {
-                            const ratings = [];
-                            ratingsSnapshot.forEach(ratingDoc => {
-                                ratings.push({ id: ratingDoc.id, rating: ratingDoc.data().rating });
-                            });
-                            
-                            const stats = calculateRatingStats(ratings);
-                            resolve({ personality, stats });
-                            unsubscribe(); 
-                        }, (error) => {
-                            console.error("Błąd ładowania ocen dla", personality.discordNick, ":", error);
-                            resolve({ personality, stats: calculateRatingStats([]) });
-                            unsubscribe();
-                        });
-                    });
-                });
+                const ratingSubscriptions = [];
+                const resultsMap = new Map();
                 
-                Promise.all(ratingPromises).then(results => {
-                    renderRanking(results);
-                    rankingLoading.classList.add('hidden');
-                }).catch(error => {
-                    console.error("Błąd podczas Promise.all:", error);
-                    rankingLoading.textContent = 'Błąd ładowania danych rankingu.';
+                personalitiesData.forEach(personality => {
+                    const ratingsRef = query(getRatingsCollectionRef(personality.id));
+                    
+                    const unsubscribe = onSnapshot(ratingsRef, (ratingsSnapshot) => {
+                        const ratings = [];
+                        ratingsSnapshot.forEach(ratingDoc => {
+                            ratings.push({ id: ratingDoc.id, rating: ratingDoc.data().rating });
+                        });
+                        
+                        const stats = calculateRatingStats(ratings);
+                        resultsMap.set(personality.id, { personality, stats });
+                        
+                        if (resultsMap.size === personalitiesData.length) {
+                            renderRanking(Array.from(resultsMap.values()));
+                            rankingLoading.classList.add('hidden');
+                        }
+                    }, (error) => {
+                        console.error("Błąd ładowania ocen dla", personality.discordNick, ":", error);
+                        resultsMap.set(personality.id, { personality, stats: calculateRatingStats([]) });
+                        if (resultsMap.size === personalitiesData.length) {
+                             renderRanking(Array.from(resultsMap.values()));
+                             rankingLoading.classList.add('hidden');
+                        }
+                    });
+                    
+                    ratingSubscriptions.push(unsubscribe);
                 });
+
+                window.currentRankingSubscriptions = ratingSubscriptions;
 
             }, (error) => {
                 console.error("Błąd ładowania nicków:", error);
@@ -276,6 +308,12 @@
                 rankingLoading.classList.remove('hidden');
             });
         };
+        
+        window.addEventListener('beforeunload', () => {
+            if (window.currentRankingSubscriptions) {
+                window.currentRankingSubscriptions.forEach(unsubscribe => unsubscribe());
+            }
+        });
     </script>
 </body>
 </html>
