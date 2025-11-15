@@ -3,103 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprawdziany i Kartkówki NR. 1 - NIZE</title>
+    <title>Publiczny Ranking Medialnych - NIZE</title>
     <link rel="icon" href="https://i.imgur.com/G590Y6j.png" type="image/png">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Inter:wght@100..900&display=swap');
+        
+        :root {
+            --primary-neon: #a855f7; 
+            --secondary-neon: #60a5fa; 
+            --winner-gold: #FFD700; 
+            --deep-dark: #0a0314; 
+            --mid-dark: #170c2a; 
+            --glow-shadow: 0 0 8px rgba(168, 85, 247, 0.7), 0 0 15px rgba(139, 92, 246, 0.5);
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--deep-dark);
+            color: #f3f4f6; 
+        }
+
+        .header-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .card {
+            background-color: var(--mid-dark);
+            border: 1px solid #2e1c4a; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7); 
         }
         
-        @keyframes float-full {
-            0% { transform: translate(0vw, 0vh) rotate(0deg); opacity: 0.5; }
-            25% { transform: translate(15vw, -20vh) rotate(10deg); opacity: 0.3; }
-            50% { transform: translate(-25vw, 10vh) rotate(-15deg); opacity: 0.6; }
-            75% { transform: translate(10vw, 25vh) rotate(5deg); opacity: 0.4; }
-            100% { transform: translate(0vw, 0vh) rotate(0deg); opacity: 0.5; }
+        .neon-border {
+            border: 2px solid var(--primary-neon);
+            box-shadow: var(--glow-shadow);
+        }
+
+        .neon-text {
+            color: var(--secondary-neon); 
+            text-shadow: var(--glow-shadow);
         }
         
-        .animate-fadeIn {
-            animation: fadeIn 1.5s ease-out;
+        .rank-1-highlight {
+            border: 3px solid var(--winner-gold);
+            background-color: #2a154a; 
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4), 0 4px 10px rgba(255, 215, 0, 0.6);
+            transform: scale(1.03);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        .animate-pulseSlow {
-            animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+        .star-display {
+            font-size: 2.2rem;
+            line-height: 1;
+        }
+        .star-gold {
+            color: var(--winner-gold);
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .bar-container {
+            height: 14px;
+            background-color: #2e1c4a;
+            border-radius: 7px;
+            overflow: hidden;
+            border: 1px solid #4c1d95;
+        }
+
+        .bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, var(--primary-neon));
+            transition: width 1.5s ease-out;
+            box-shadow: 0 0 8px rgba(168, 85, 247, 0.7);
+            border-radius: 7px 0 0 7px;
         }
         
-        .animate-float-full {
-            animation: float-full 25s ease-in-out infinite alternate;
+        .ranking-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background-color: #1c1130;
+            border: 1px solid #3c2f45;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
-        .animate-float-slow {
-            animation: float-full 40s ease-in-out infinite alternate-reverse;
+        .ranking-item:not(.rank-1-highlight):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.2);
         }
-        .animate-float-fast {
-            animation: float-full 18s ease-in-out infinite alternate;
+
+        .rank-number {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: #3e265c;
+            color: #d1d5db;
         }
+
+        .rank-1-highlight .rank-number {
+             background: var(--winner-gold);
+             color: var(--deep-dark);
+             font-size: 1.5rem;
+        }
+        
     </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'dark-purple': '#1a0d24',
-                        'primary': '#8a2be2',
-                        'secondary': '#c4b5fd',
-                        'accent-white': '#e0e0e0'
-                    },
-                    fontFamily: {
-                        sans: ['Helvetica', 'Calibri', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
 </head>
-<body class="bg-dark-purple font-sans text-accent-white h-screen flex items-center justify-center relative overflow-hidden">
+<body class="min-h-screen p-4 md:p-8">
 
-    <div class="absolute inset-0 pointer-events-none">
-        
-        <div class="animate-float-slow top-[-10%] left-[5%] w-40 h-40 bg-primary/10 rounded-full blur-3xl" style="animation-duration: 45s; animation-delay: 0s;"></div>
-        <div class="animate-float-slow bottom-[-15%] right-[20%] w-48 h-48 bg-secondary/5 rounded-xl blur-3xl" style="animation-duration: 50s; animation-delay: 2s;"></div>
-        
-        <div class="animate-float-full top-[10%] right-[-5%] w-24 h-24 bg-secondary/20 rounded-full blur-2xl" style="animation-duration: 28s; animation-delay: 1s;"></div>
-        <div class="animate-float-full bottom-[20%] left-[-10%] w-32 h-32 bg-primary/25 rounded-xl blur-2xl" style="animation-duration: 32s; animation-delay: 4s;"></div>
-        
-        <div class="animate-float-fast top-[60%] left-[25%] w-20 h-20 bg-secondary/15 rounded-full blur-2xl" style="animation-duration: 20s; animation-delay: 6s;"></div>
-        <div class="animate-float-fast top-[5%] right-[50%] w-16 h-16 bg-primary/30 rounded-full blur-xl" style="animation-duration: 15s; animation-delay: 3s;"></div>
-        <div class="animate-float-fast bottom-[5%] left-[50%] w-12 h-12 bg-secondary/25 rounded-lg blur-xl" style="animation-duration: 18s; animation-delay: 7s;"></div>
+    <div class="max-w-5xl mx-auto">
+        <header class="text-center mb-12 mt-6">
+            <img src="https://zapodaj.net/images/e331dc1d7b9f1.png" alt="NIZE Logo" class="h-20 mx-auto mb-4 object-contain filter drop-shadow-lg" style="filter: drop-shadow(0 0 8px var(--primary-neon));">
+            <h1 class="text-5xl sm:text-6xl font-extrabold mb-2 neon-text header-font">RANKING MEDIALNYCH</h1>
+            <p class="text-gray-400 font-light">NR. 1 W PL Sprawdziany i Kartkówki NIZE</p>
+        </header>
 
-    </div>
-    
-    <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-fadeIn relative z-10">
-        
-        <img src="https://zapodaj.net/images/e331dc1d7b9f1.png" alt="NIZE Logo" class="h-20 sm:h-24 mx-auto object-contain mb-8 animate-pulseSlow">
-        
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight text-secondary drop-shadow-lg">
-            Tymczasowo Strona Niedostępna
-        </h1>
-        
-        <p class="text-xl sm:text-2xl font-light mb-8 max-w-3xl mx-auto text-accent-white/90">
-            Przepraszamy za utrudnienia! Pracujemy nad ulepszeniami strony.
-        </p>
-
-        <p class="text-lg font-medium text-primary mt-6">
-            Wrócimy wkrótce!
-        </p>
-        
-        <a href="https://discord.gg/testypl" target="_blank" class="inline-flex items-center bg-primary text-dark-purple mt-6 px-8 py-3 rounded-lg font-bold hover:bg-primary/90 transition duration-300 shadow-xl shadow-primary/30 transform hover:scale-105">
-            Odwiedź Discord NIZE
-        </a>
-        
-        <div class="mt-16 text-sm text-accent-white/50">
-            <p>2025 Sprawdziany i Kartkówki NIZE</p>
-            <p>Strona wykonana przez: OSC4R_</p>
+        <div id="ranking-view">
+            <div class="card p-8 rounded-2xl neon-border">
+                <h2 class="text-3xl font-bold mb-8 border-b border-primary-neon pb-3 text-secondary-neon header-font flex items-center">
+                    <span class="inline-block text-gray-200 mr-3">TOP</span> 
+                    <span class="neon-text">Medialni & Ich Oceny</span>
+                </h2>
+                
+                <div id="ranking-list" class="space-y-6">
+                    
+                </div>
+                
+                <p id="ranking-loading" class="text-center py-10 text-primary-neon font-medium text-xl">
+                    Ładowanie danych z Bazy NIZE...
+                </p>
+                <p id="no-data" class="text-center py-10 text-gray-500 hidden">
+                    Brak dodanych osób lub aktywnych ocen.
+                </p>
+            </div>
         </div>
     </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAAeQbCXt15Zjuf_sA1p0jRp_tSb8WSaNs",
+            authDomain: "ocena-medialnych.firebaseapp.com",
+            projectId: "ocena-medialnych",
+            storageBucket: "ocena-medialnych.firebasestorage.app",
+            messagingSenderId: "570287989991",
+            appId: "1:570287989991:web:4c0594ab280515802dee42",
+            measurementId: "G-3RQ6NCS31Q"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
+
+        let db;
+        let isAuthReady = false;
+        
+        const rankingList = document.getElementById('ranking-list');
+        const rankingLoading = document.getElementById('ranking-loading');
+        const noData = document.getElementById('no-data');
+
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "") {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            const auth = getAuth(app);
+
+            const authenticate = async () => {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth); 
+                    }
+                } catch (error) {
+                    console.error("Błąd autentykacji:", error);
+                }
+            };
+
+            onAuthStateChanged(auth, (user) => {
+                isAuthReady = true;
+                if (user) {
+                    loadRankingData();
+                } else {
+                    rankingLoading.textContent = 'Błąd bazy NIZE';
+                }
+            });
+
+            authenticate();
+        } else {
+            rankingLoading.textContent = 'BŁĄD: SS22';
+        }
+        
+        const getPersonalitiesCollectionRef = () => {
+            if (!db) throw new Error("Firebase nie jest gotowe.");
+            return collection(db, 'artifacts', appId, 'public', 'data', 'media_nicks');
+        };
+
+        const getRatingsCollectionRef = (personalityId) => {
+            if (!db) throw new Error("Firebase nie jest gotowe.");
+            return collection(db, 'artifacts', appId, 'public', 'data', 'media_nicks', personalityId, 'ratings');
+        };
+
+        const calculateRatingStats = (ratings) => {
+            const totalRating = ratings.reduce((sum, rating) => sum + rating.rating, 0);
+            const ratingCount = ratings.length;
+            const averageRating = ratingCount > 0 ? (totalRating / ratingCount) : 0;
+            const roundedAverage = ratingCount > 0 ? Math.round(averageRating) : 0; 
+            
+            return { totalRating, ratingCount, averageRating, roundedAverage };
+        };
+
+        const renderRankingItem = (personality, stats, rank) => {
+            const { discordNick, tiktokLink } = personality;
+            const { averageRating, roundedAverage, ratingCount } = stats;
+            
+            if (ratingCount === 0) return null;
+
+            const fullStar = '★';
+            const emptyStar = '☆';
+
+            const starsHTML = fullStar.repeat(roundedAverage) + emptyStar.repeat(5 - roundedAverage);
+            const barWidth = (averageRating / 5) * 100;
+
+            const isWinner = rank === 1;
+            const nicknameColor = isWinner ? 'text-white' : 'text-gray-200';
+            const starsColorClass = isWinner ? 'star-gold' : 'text-primary-neon';
+            
+            const itemClass = `ranking-item p-4 rounded-xl shadow-lg transition duration-300 ${isWinner ? 'rank-1-highlight' : 'hover:shadow-xl'}`;
+            
+            const item = document.createElement('div');
+            item.className = itemClass;
+            
+            item.innerHTML = `
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 text-center mr-4">
+                        <span class="rank-number font-bold text-lg">${rank}</span>
+                    </div>
+                    
+                    <div class="flex-grow min-w-0">
+                        <h4 class="text-xl font-extrabold ${nicknameColor} truncate">${discordNick}</h4>
+                        <a href="${tiktokLink}" target="_blank" class="text-xs text-secondary-neon hover:text-white transition truncate block mt-1">
+                            <span class="font-mono">TikTok: ${tiktokLink}</span>
+                        </a>
+                    </div>
+                    
+                    <div class="flex-shrink-0 ml-4 text-right">
+                        <div class="star-display font-bold ${starsColorClass}">${starsHTML}</div>
+                        <p class="text-sm text-gray-400 font-medium mt-1">
+                            ${averageRating.toFixed(2)}/5 
+                            <span class="text-xs text-gray-500">(${ratingCount} ocen)</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="w-full mt-3">
+                    <div class="bar-container">
+                        <div class="bar" style="width: ${barWidth}%;"></div>
+                    </div>
+                </div>
+            `;
+            
+            return item;
+        };
+        
+        const renderRanking = (personalitiesWithStats) => {
+            rankingList.innerHTML = '';
+            
+            const sortedRanking = personalitiesWithStats
+                .filter(p => p.stats.ratingCount > 0) 
+                .sort((a, b) => {
+                    if (b.stats.averageRating !== a.stats.averageRating) {
+                        return b.stats.averageRating - a.stats.averageRating;
+                    }
+                    return b.stats.ratingCount - a.stats.ratingCount;
+                });
+            
+            if (sortedRanking.length === 0) {
+                 noData.classList.remove('hidden');
+                 return;
+            } else {
+                 noData.classList.add('hidden');
+            }
+            
+            sortedRanking.forEach((item, index) => {
+                const rank = index + 1;
+                const element = renderRankingItem(item.personality, item.stats, rank);
+                if (element) {
+                    rankingList.appendChild(element);
+                }
+            });
+        };
+        
+        const loadRankingData = () => {
+            if (!isAuthReady) {
+                return;
+            }
+
+            rankingLoading.classList.remove('hidden');
+            noData.classList.add('hidden');
+            rankingList.innerHTML = '';
+            
+            const personalitiesRef = query(getPersonalitiesCollectionRef());
+            
+            if (window.currentRankingSubscriptions) {
+                 window.currentRankingSubscriptions.forEach(unsubscribe => unsubscribe());
+            }
+            const ratingSubscriptions = [];
+            const resultsMap = new Map();
+            
+            onSnapshot(personalitiesRef, (snapshot) => {
+                const personalitiesData = [];
+                snapshot.forEach(doc => {
+                    personalitiesData.push({ id: doc.id, ...doc.data() });
+                });
+
+                if (personalitiesData.length === 0) {
+                    rankingLoading.classList.add('hidden');
+                    noData.classList.remove('hidden');
+                    return;
+                }
+                
+                ratingSubscriptions.forEach(unsubscribe => unsubscribe());
+                ratingSubscriptions.length = 0;
+                resultsMap.clear();
+
+                personalitiesData.forEach(personality => {
+                    const ratingsRef = query(getRatingsCollectionRef(personality.id));
+                    
+                    const unsubscribe = onSnapshot(ratingsRef, (ratingsSnapshot) => {
+                        const ratings = [];
+                        ratingsSnapshot.forEach(ratingDoc => {
+                            ratings.push({ id: ratingDoc.id, rating: ratingDoc.data().rating });
+                        });
+                        
+                        const stats = calculateRatingStats(ratings);
+                        resultsMap.set(personality.id, { personality, stats });
+                        
+                        if (resultsMap.size === personalitiesData.length) {
+                            renderRanking(Array.from(resultsMap.values()));
+                            rankingLoading.classList.add('hidden');
+                        }
+                    }, (error) => {
+                        console.error("Błąd ładowania ocen dla", personality.discordNick, ":", error);
+                        resultsMap.set(personality.id, { personality, stats: calculateRatingStats([]) });
+                        if (resultsMap.size === personalitiesData.length) {
+                             renderRanking(Array.from(resultsMap.values()));
+                             rankingLoading.classList.add('hidden');
+                        }
+                    });
+                    
+                    ratingSubscriptions.push(unsubscribe);
+                });
+
+                window.currentRankingSubscriptions = ratingSubscriptions;
+
+            }, (error) => {
+                console.error("Błąd ładowania nicków:", error);
+                rankingLoading.textContent = 'BŁĄD: Wystąpił błąd podczas ładowania listy osób.';
+                rankingLoading.classList.remove('hidden');
+            });
+        };
+        
+        window.addEventListener('beforeunload', () => {
+            if (window.currentRankingSubscriptions) {
+                window.currentRankingSubscriptions.forEach(unsubscribe => unsubscribe());
+            }
+        });
+    </script>
 </body>
 </html>
