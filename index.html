@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Publiczny Ranking Medialnych - NIZE</title>
-    <link rel="icon" href="https://zapodaj.net/images/e331dc1d7b9f1.png" type="image/png">
+    <link rel="icon" href="https://zapodaj.net/images/6772ae10163db.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Inter:wght@100..900&display=swap');
@@ -146,7 +146,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const userProvidedConfig = {
+        const firebaseConfig = {
             apiKey: "AIzaSyAAeQbCXt15Zjuf_sA1p0jRp_tSb8WSaNs",
             authDomain: "ocena-medialnych.firebaseapp.com",
             projectId: "ocena-medialnych",
@@ -155,8 +155,6 @@
             appId: "1:570287989991:web:4c0594ab280515802dee42",
             measurementId: "G-3RQ6NCS31Q"
         };
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userProvidedConfig;
-        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
@@ -189,7 +187,7 @@
                 if (user) {
                     loadRankingData();
                 } else {
-                    loadRankingData(); 
+                    rankingLoading.textContent = 'Błąd bazy NIZE';
                 }
             });
 
@@ -279,35 +277,31 @@
                 });
             
             if (sortedRanking.length === 0) {
-                 rankingLoading.classList.add('hidden');
                  noData.classList.remove('hidden');
                  return;
             } else {
                  noData.classList.add('hidden');
             }
             
-            let assignedRank = 1; 
-            let previousRatingFixed = null; 
+            const perfectScoreCount = sortedRanking.filter(item => item.stats.averageRating === 5).length;
 
             sortedRanking.forEach((item, index) => {
-                const currentRatingFixed = item.stats.averageRating.toFixed(2);
+                let rank;
 
-                if (index > 0) {
-                    if (currentRatingFixed === previousRatingFixed) {
-                    } else {
-                        assignedRank = index + 1;
-                    }
+                if (item.stats.averageRating === 5) {
+                  
+                    rank = 1;
+                } else {
+               
+                    const adjustment = perfectScoreCount > 0 ? (perfectScoreCount - 1) : 0;
+                    rank = (index + 1) - adjustment;
                 }
-                
-                previousRatingFixed = currentRatingFixed;
 
-                const element = renderRankingItem(item.personality, item.stats, assignedRank);
+                const element = renderRankingItem(item.personality, item.stats, rank);
                 if (element) {
                     rankingList.appendChild(element);
                 }
             });
-
-            rankingLoading.classList.add('hidden'); 
         };
         
         const loadRankingData = () => {
@@ -324,11 +318,10 @@
             if (window.currentRankingSubscriptions) {
                  window.currentRankingSubscriptions.forEach(unsubscribe => unsubscribe());
             }
-
             const ratingSubscriptions = [];
             const resultsMap = new Map();
             
-            const unsubscribePersonalities = onSnapshot(personalitiesRef, (snapshot) => {
+            onSnapshot(personalitiesRef, (snapshot) => {
                 const personalitiesData = [];
                 snapshot.forEach(doc => {
                     personalitiesData.push({ id: doc.id, ...doc.data() });
@@ -343,8 +336,6 @@
                 ratingSubscriptions.forEach(unsubscribe => unsubscribe());
                 ratingSubscriptions.length = 0;
                 resultsMap.clear();
-                
-                let completionCount = 0;
 
                 personalitiesData.forEach(personality => {
                     const ratingsRef = query(getRatingsCollectionRef(personality.id));
@@ -358,20 +349,23 @@
                         const stats = calculateRatingStats(ratings);
                         resultsMap.set(personality.id, { personality, stats });
                         
-                        renderRanking(Array.from(resultsMap.values()));
-                        rankingLoading.classList.add('hidden');
-                        
+                        if (resultsMap.size === personalitiesData.length) {
+                            renderRanking(Array.from(resultsMap.values()));
+                            rankingLoading.classList.add('hidden');
+                        }
                     }, (error) => {
                         console.error("Błąd ładowania ocen dla", personality.discordNick, ":", error);
                         resultsMap.set(personality.id, { personality, stats: calculateRatingStats([]) });
-                        renderRanking(Array.from(resultsMap.values()));
-                        rankingLoading.classList.add('hidden');
+                        if (resultsMap.size === personalitiesData.length) {
+                             renderRanking(Array.from(resultsMap.values()));
+                             rankingLoading.classList.add('hidden');
+                        }
                     });
                     
                     ratingSubscriptions.push(unsubscribe);
                 });
 
-                window.currentRankingSubscriptions = [...ratingSubscriptions, unsubscribePersonalities]; 
+                window.currentRankingSubscriptions = ratingSubscriptions;
 
             }, (error) => {
                 console.error("Błąd ładowania nicków:", error);
