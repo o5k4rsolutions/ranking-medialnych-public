@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Publiczny Ranking Medialnych - NIZE</title>
-    <link rel="icon" href="https://zapodaj.net/images/6772ae10163db.png" type="image/png">
+    <link rel="icon" href="https://zapodaj.net/images/e331dc1d7b9f1.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Inter:wght@100..900&display=swap');
@@ -144,20 +144,14 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const firebaseConfig = {
-            apiKey: "AIzaSyAAeQbCXt15Zjuf_sA1p0jRp_tSb8WSaNs",
-            authDomain: "ocena-medialnych.firebaseapp.com",
-            projectId: "ocena-medialnych",
-            storageBucket: "ocena-medialnych.firebasestorage.app",
-            messagingSenderId: "570287989991",
-            appId: "1:570287989991:web:4c0594ab280515802dee42",
-            measurementId: "G-3RQ6NCS31Q"
-        };
+        const firebaseConfigJson = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
+        setLogLevel('Debug');
+        
         let db;
         let isAuthReady = false;
         
@@ -165,8 +159,8 @@
         const rankingLoading = document.getElementById('ranking-loading');
         const noData = document.getElementById('no-data');
 
-        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "") {
-            const app = initializeApp(firebaseConfig);
+        if (firebaseConfigJson) {
+            const app = initializeApp(firebaseConfigJson);
             db = getFirestore(app);
             const auth = getAuth(app);
 
@@ -187,13 +181,13 @@
                 if (user) {
                     loadRankingData();
                 } else {
-                    rankingLoading.textContent = 'Błąd bazy NIZE';
+                    rankingLoading.textContent = 'BŁĄD: Wymagana autoryzacja.';
                 }
             });
 
             authenticate();
         } else {
-            rankingLoading.textContent = 'BŁĄD: SS22';
+            rankingLoading.textContent = 'BŁĄD: SS22 (Brak konfiguracji Firebase)';
         }
         
         const getPersonalitiesCollectionRef = () => {
@@ -283,9 +277,18 @@
                  noData.classList.add('hidden');
             }
             
+            let currentRank = 1;
+
             sortedRanking.forEach((item, index) => {
-                const rank = index + 1;
-                const element = renderRankingItem(item.personality, item.stats, rank);
+                if (index > 0) {
+                    const previousItem = sortedRanking[index - 1];
+                    
+                    if (item.stats.averageRating < previousItem.stats.averageRating) {
+                        currentRank = index + 1;
+                    }
+                }
+                
+                const element = renderRankingItem(item.personality, item.stats, currentRank);
                 if (element) {
                     rankingList.appendChild(element);
                 }
@@ -293,7 +296,7 @@
         };
         
         const loadRankingData = () => {
-            if (!isAuthReady) {
+            if (!isAuthReady || !db) {
                 return;
             }
 
@@ -325,6 +328,8 @@
                 ratingSubscriptions.length = 0;
                 resultsMap.clear();
 
+                let ratingSubscriptionsCount = 0;
+
                 personalitiesData.forEach(personality => {
                     const ratingsRef = query(getRatingsCollectionRef(personality.id));
                     
@@ -337,17 +342,21 @@
                         const stats = calculateRatingStats(ratings);
                         resultsMap.set(personality.id, { personality, stats });
                         
-                        if (resultsMap.size === personalitiesData.length) {
+                        ratingSubscriptionsCount++;
+
+                        if (ratingSubscriptionsCount === personalitiesData.length) {
                             renderRanking(Array.from(resultsMap.values()));
                             rankingLoading.classList.add('hidden');
                         }
                     }, (error) => {
                         console.error("Błąd ładowania ocen dla", personality.discordNick, ":", error);
                         resultsMap.set(personality.id, { personality, stats: calculateRatingStats([]) });
-                        if (resultsMap.size === personalitiesData.length) {
+                        
+                        ratingSubscriptionsCount++;
+                         if (ratingSubscriptionsCount === personalitiesData.length) {
                              renderRanking(Array.from(resultsMap.values()));
                              rankingLoading.classList.add('hidden');
-                        }
+                         }
                     });
                     
                     ratingSubscriptions.push(unsubscribe);
