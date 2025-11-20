@@ -144,14 +144,22 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const firebaseConfigJson = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const userProvidedConfig = {
+            apiKey: "AIzaSyAAeQbCXt15Zjuf_sA1p0jRp_tSb8WSaNs",
+            authDomain: "ocena-medialnych.firebaseapp.com",
+            projectId: "ocena-medialnych",
+            storageBucket: "ocena-medialnych.firebasestorage.app",
+            messagingSenderId: "570287989991",
+            appId: "1:570287989991:web:4c0594ab280515802dee42",
+            measurementId: "G-3RQ6NCS31Q"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userProvidedConfig;
+        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
-        setLogLevel('Debug');
-        
         let db;
         let isAuthReady = false;
         
@@ -159,8 +167,8 @@
         const rankingLoading = document.getElementById('ranking-loading');
         const noData = document.getElementById('no-data');
 
-        if (firebaseConfigJson) {
-            const app = initializeApp(firebaseConfigJson);
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "") {
+            const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             const auth = getAuth(app);
 
@@ -181,13 +189,13 @@
                 if (user) {
                     loadRankingData();
                 } else {
-                    rankingLoading.textContent = 'BŁĄD: Wymagana autoryzacja.';
+                    loadRankingData(); 
                 }
             });
 
             authenticate();
         } else {
-            rankingLoading.textContent = 'BŁĄD: SS22 (Brak konfiguracji Firebase)';
+            rankingLoading.textContent = 'BŁĄD: SS22';
         }
         
         const getPersonalitiesCollectionRef = () => {
@@ -271,32 +279,39 @@
                 });
             
             if (sortedRanking.length === 0) {
+                 rankingLoading.classList.add('hidden');
                  noData.classList.remove('hidden');
                  return;
             } else {
                  noData.classList.add('hidden');
             }
             
-            let currentRank = 1;
+            let assignedRank = 1; 
+            let previousRatingFixed = null; 
 
             sortedRanking.forEach((item, index) => {
+                const currentRatingFixed = item.stats.averageRating.toFixed(2);
+
                 if (index > 0) {
-                    const previousItem = sortedRanking[index - 1];
-                    
-                    if (item.stats.averageRating < previousItem.stats.averageRating) {
-                        currentRank = index + 1;
+                    if (currentRatingFixed === previousRatingFixed) {
+                    } else {
+                        assignedRank = index + 1;
                     }
                 }
                 
-                const element = renderRankingItem(item.personality, item.stats, currentRank);
+                previousRatingFixed = currentRatingFixed;
+
+                const element = renderRankingItem(item.personality, item.stats, assignedRank);
                 if (element) {
                     rankingList.appendChild(element);
                 }
             });
+
+            rankingLoading.classList.add('hidden'); 
         };
         
         const loadRankingData = () => {
-            if (!isAuthReady || !db) {
+            if (!isAuthReady) {
                 return;
             }
 
@@ -309,10 +324,11 @@
             if (window.currentRankingSubscriptions) {
                  window.currentRankingSubscriptions.forEach(unsubscribe => unsubscribe());
             }
+
             const ratingSubscriptions = [];
             const resultsMap = new Map();
             
-            onSnapshot(personalitiesRef, (snapshot) => {
+            const unsubscribePersonalities = onSnapshot(personalitiesRef, (snapshot) => {
                 const personalitiesData = [];
                 snapshot.forEach(doc => {
                     personalitiesData.push({ id: doc.id, ...doc.data() });
@@ -327,8 +343,8 @@
                 ratingSubscriptions.forEach(unsubscribe => unsubscribe());
                 ratingSubscriptions.length = 0;
                 resultsMap.clear();
-
-                let ratingSubscriptionsCount = 0;
+                
+                let completionCount = 0;
 
                 personalitiesData.forEach(personality => {
                     const ratingsRef = query(getRatingsCollectionRef(personality.id));
@@ -342,27 +358,20 @@
                         const stats = calculateRatingStats(ratings);
                         resultsMap.set(personality.id, { personality, stats });
                         
-                        ratingSubscriptionsCount++;
-
-                        if (ratingSubscriptionsCount === personalitiesData.length) {
-                            renderRanking(Array.from(resultsMap.values()));
-                            rankingLoading.classList.add('hidden');
-                        }
+                        renderRanking(Array.from(resultsMap.values()));
+                        rankingLoading.classList.add('hidden');
+                        
                     }, (error) => {
                         console.error("Błąd ładowania ocen dla", personality.discordNick, ":", error);
                         resultsMap.set(personality.id, { personality, stats: calculateRatingStats([]) });
-                        
-                        ratingSubscriptionsCount++;
-                         if (ratingSubscriptionsCount === personalitiesData.length) {
-                             renderRanking(Array.from(resultsMap.values()));
-                             rankingLoading.classList.add('hidden');
-                         }
+                        renderRanking(Array.from(resultsMap.values()));
+                        rankingLoading.classList.add('hidden');
                     });
                     
                     ratingSubscriptions.push(unsubscribe);
                 });
 
-                window.currentRankingSubscriptions = ratingSubscriptions;
+                window.currentRankingSubscriptions = [...ratingSubscriptions, unsubscribePersonalities]; 
 
             }, (error) => {
                 console.error("Błąd ładowania nicków:", error);
